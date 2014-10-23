@@ -262,12 +262,14 @@ class WorkFiles(object):
         """
         Create folders for specified context
         """
-        self._app.log_debug("Creating folders for context %s" % ctx)
+        self._app.log_info("Bypassing folder creation. SGTK API is way too slow for that!")
+
+        # self._app.log_debug("Creating folders for context %s" % ctx)
         
-        # create folders:
-        ctx_entity = ctx.task or ctx.entity or ctx.project
-        self._app.tank.create_filesystem_structure(ctx_entity.get("type"), ctx_entity.get("id"), 
-                                                   engine=self._app.engine.name)
+        # # create folders:
+        # ctx_entity = ctx.task or ctx.entity or ctx.project
+        # self._app.tank.create_filesystem_structure(ctx_entity.get("type"), ctx_entity.get("id"), 
+        #                                            engine=self._app.engine.name)
         
     def _on_open_publish(self, publish_file, work_file):
         """
