@@ -84,6 +84,11 @@ class SaveAs(object):
             else:
                 # get the default name from settings:
                 default_name = self._app.get_setting("saveas_default_name")
+                if not default_name:
+                    # if no default name set, use the taank_name of the task
+                    task = self._app.shotgun.find_one("Task",[["id","is",self._app.context.task["id"]]],['sg_tank_name'])
+                    default_name = task.get('sg_tank_name')
+
                 if not default_name and not name_is_optional:
                     # name isn't optional so we should use something:
                     default_name = "scene"
