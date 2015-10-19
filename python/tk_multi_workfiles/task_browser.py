@@ -94,12 +94,15 @@ class TaskBrowserWidget(browser_widget.BrowserWidget):
                 
             else:
                 # get my stuff
+                sg_filters = [ ["project", "is", self._app.context.project],
+                               ["entity", "is", data["entity"]],
+                               ["step", "is_not", None],
+                               ["task_assignees", "is", self._current_user ] ]
+                sg_filters.extend( self.__task_filters )
+
                 output["users"] = [ self._current_user ]
-                output["tasks"] = self._app.shotgun.find("Task", 
-                                                    [ ["project", "is", self._app.context.project],
-                                                      ["entity", "is", data["entity"]], 
-                                                      ["step", "is_not", None],
-                                                      ["task_assignees", "is", self._current_user ]], 
+                output["tasks"] = self._app.shotgun.find("Task",
+                                                    sg_filters,
                                                     fields)
         else:
             # get all tasks
