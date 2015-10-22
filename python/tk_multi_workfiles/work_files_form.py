@@ -38,6 +38,8 @@ class WorkFilesForm(QtGui.QWidget):
     show_in_fs = QtCore.Signal()
     show_in_shotgun = QtCore.Signal(object)#FileItem
     
+    apply_context = QtCore.Signal()
+
     def __init__(self, app, handler, parent = None):
         """
         Construction
@@ -127,6 +129,7 @@ class WorkFilesForm(QtGui.QWidget):
         the widget is closed
         """
         self._ui.file_list.destroy()
+        self.apply_context.emit()
         return QtGui.QWidget.closeEvent(self, e)
         
     def _on_open_file(self):
