@@ -99,6 +99,8 @@ class WorkFiles(object):
         self._workfiles_ui.show_in_fs.connect(self._on_show_in_file_system)
         self._workfiles_ui.show_in_shotgun.connect(self._on_show_in_shotgun)
         
+        self._workfiles_ui.apply_context.connect(self._on_apply_context)
+
     def find_files(self, filter):
         """
         Find files using the current context, work and publish templates
@@ -709,6 +711,20 @@ class WorkFiles(object):
         # close work files UI:
         self._workfiles_ui.close()
         
+    def _on_apply_context(self):
+        """
+        Ask the user if the new context should be applied.
+        Called from WorkFileForm close event
+        """
+        if not self._context == self._app.context:
+            res = QtGui.QMessageBox.question(self._workfiles_ui,
+                                             "Change Work Area ?",
+                                             "You've selected a new context. Do you wish to change your Work Area ?",
+                                             QtGui.QMessageBox.Ok|QtGui.QMessageBox.Cancel)
+            if res == QtGui.QMessageBox.Ok:
+                # restart the engine with the new context
+                self._restart_engine(self._context)
+
     def get_current_work_area(self):
         """
         Get the current work area/context
