@@ -15,6 +15,72 @@ class FileItem(object):
     """
     Encapsulate details about a work file
     """
+    
+    @staticmethod
+    def build_file_key(fields, template, ignore_fields = None):
+        """
+        Build a unique key from the specified fields and template.  This will be used to determine 
+        if multiple files are actually just versions of the same file.
+
+        For example, the following inputs:
+        
+            fields: {"sg_asset_type":"Character", "Asset":"Fred", "Step":"Anm", "name":"test", "version":3, "sub_name":"TheCat"}
+            template: /assets/{sg_asset_type}/{Asset}/{Step}/work/maya/{Asset}_{Step}[_{name}]_v{version}.{maya_ext}
+            ignore_fields: ["version"]
+            
+            Notes: 
+            - The template key maya_ext has a default value of 'mb'
+            
+        Will generate the file key:
+        
+            (('Asset', 'Fred'), ('Step', 'Anm'), ('maya_ext':'mb'), ('name', 'test'), ('sg_asset_type', 'Character'))
+
+            Notes: 
+            - 'version' is skipped because it was specified in the ignore_fields
+            - 'sub_name' is skipped because it isn't a valid key in the template
+            - Although 'maya_ext' wasn't included in the input fields, it is added to the file key as 
+              it has a default value in the template 
+        
+        :param fields:          A dictionary of fields extracted from a file path
+        :param template:        The template that represents the files this key will be 
+                                used to compare.
+        :param ignore_fields:   A list of fields to ignore when constructing the key.
+                                Typically this will contain at least 'version' but it 
+                                may also contain other fields (e.g. user initials in
+                                the file name).
+        :returns:               An immutable 'key' that can be used for comparison and
+                                as the key in a dictionary (e.g. a string).
+        """
+        # default ignore keys to just 'version':
+        ignore_fields = ignore_fields or ["version"]
+
+        # populate the file key from the fields passed in that are included in
+        # the template, skipping the ignore fields:
+        file_key = {}
+        template_keys = template.keys
+        for name, value in fields.iteritems():
+            if name in ignore_fields:
+                # skip fields that are explicitly ignored
+                continue
+
+            if name not in template_keys:
+                # skip fields that aren't included in the template
+                continue
+
+            file_key[name] = value
+            
+        # add in any 'default' values from the template that aren't explicitely ignored
+        # or weren't specified in the input fields:
+        for key in template_keys.values():
+            if (key.name not in ignore_fields
+                and key.default != None
+                and key.name not in file_key):
+                file_key[key.name] = key.default 
+        
+        # return an immutable representation of the sorted dictionary:
+        # e.g. (('sequence', 'Sequence01'), ('shot', 'shot_010'), ('name', 'foo'))
+        return tuple(sorted(file_key.iteritems()))
+    
     def __init__(self, path, publish_path, is_local, is_published, details, key):
         """
         Construction
@@ -61,7 +127,7 @@ class FileItem(object):
 
     @property
     def key(self):
-        # a key that matches across all versions of a single file.
+        # a unique key that matches across all versions of a single file.
         return self._key
 
     """
