@@ -68,59 +68,28 @@ class EntityBrowserWidget(browser_widget.BrowserWidget):
         query_fields = ["code", "description", "image"]
 
         sg_data = []
-        if data["own_tasks_only"]:
 
-            if self._current_user is not None:
-                # my stuff
-                tasks = self._app.shotgun.find("Task", 
-                                               [ ["project", "is", self._app.context.project], 
-                                                 ["task_assignees", "is", self._current_user ]], 
-                                                 ["entity"]
-                                               )
-                
-                # get all the entities that are associated with entity types that 
-                # we are interested in.
-                entities_to_load = {}
-                for x in tasks:
-                    if x["entity"]:
-                        # task linked to an entity. Get the type of entity and process
-                        task_et_type = x["entity"]["type"]
-                        if task_et_type in self.__entity_types_to_load:
-                            if task_et_type not in entities_to_load:
-                                entities_to_load[task_et_type] = []
-                            entities_to_load[task_et_type].append(x["entity"]["id"])
+        # load all entities
+        for et in self.__entity_types_to_load:
 
-                # now load data for those
-                for et in entities_to_load:
-                    
-                    # get entities from shotgun:
-                    filter = ["id", "in"]
-                    filter.extend(entities_to_load[et])
-                    entities = self._app.shotgun.find(et, 
-                                                      [ filter ],
-                                                      query_fields + self.__entity_type_extra_fields.get(et, {}).values(),  
-                                                      [{"field_name": "code", "direction": "asc"}])
-                                        
-                    # append to results:
-                    sg_data.append({"type":et, "data":entities})
-        else:
-            # load all entities
-            for et in self.__entity_types_to_load:
-                
-                sg_filters = [ ["project", "is", self._app.context.project] ]
-                
-                if et in self.__entity_type_filters:
-                    # have a custom filter specified in the settings!
-                    sg_filters.extend( self.__entity_type_filters[et] )
-                
-                # get entities from shotgun:
-                entities = self._app.shotgun.find(et, 
-                                                  sg_filters, 
-                                                  query_fields + self.__entity_type_extra_fields.get(et, {}).values(),
-                                                  [{"field_name": "code", "direction": "asc"}])
-                                
-                # append to results:
-                sg_data.append({"type":et, "data":entities})
+            sg_filters = [ ["project", "is", self._app.context.project] ]
+
+            if et in self.__entity_type_filters:
+                # have a custom filter specified in the settings!
+                sg_filters.extend( self.__entity_type_filters[et] )
+
+            if data["own_tasks_only"] and self._current_user is not None:
+                # limit to entities with a task the current user is assigned to
+                sg_filters.append( ["tasks.Task.task_assignees", "is", self._current_user] )
+
+            # get entities from shotgun:
+            entities = self._app.shotgun.find(et,
+                                              sg_filters,
+                                              query_fields + self.__entity_type_extra_fields.get(et, {}).values(),
+                                              [{"field_name": "code", "direction": "asc"}])
+
+            # append to results:
+            sg_data.append({"type": et, "data": entities})
         
         return {"data": sg_data, "current_entity" : current_entity}
 
