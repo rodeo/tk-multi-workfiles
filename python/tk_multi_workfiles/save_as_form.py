@@ -51,6 +51,9 @@ class SaveAsForm(QtGui.QWidget):
         
         self._ui.cancel_btn.clicked.connect(self._on_cancel)
         self._ui.continue_btn.clicked.connect(self._on_continue)
+        # use regex validator to filter out spaces and weird characters like slashes or braces
+        # we allow only alphanumeric characters and "-"
+        self._ui.name_edit.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp(r'[a-zA-Z0-9_-]*'), self))
         self._ui.name_edit.textEdited.connect(self._on_name_edited)
         self._ui.name_edit.returnPressed.connect(self._on_name_return_pressed)
         self._ui.reset_version_cb.stateChanged.connect(self._on_reset_version_changed)
