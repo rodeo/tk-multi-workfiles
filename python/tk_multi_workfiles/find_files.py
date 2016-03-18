@@ -35,6 +35,9 @@ class FileFinder(object):
         # cache the valid file extensions that can be found
         self.__visible_file_extensions = [".%s" % ext if not ext.startswith(".") else ext 
                                           for ext in self.__app.get_setting("file_extensions", [])]
+        
+        # and cache any fields that should be ignored when comparing work files:
+        self.__version_compare_ignore_fields = self.__app.get_setting("version_compare_ignore_fields", [])
 
     def find_files(self, work_template, publish_template, context, filter_file_key=None):
         """
@@ -43,8 +46,9 @@ class FileFinder(object):
         :param work_template:       The template to use when searching for work files
         :param publish_template:    The template to use when searching for publish files
         :param context:             The context to search for file with
-        :param filter_file_key:     A '0' version work file path 'key' that if specified will limit the returned
-                                    list of files to just those that match
+        :param filter_file_key:     A unique file 'key' that if specified will limit the returned list of files to just 
+                                    those that match.  This 'key' should be generated using the FileItem.build_file_key()
+                                    method.
         :returns:                   A list of FileItem instances, one for each unique version of a file found in either 
                                     the work or publish areas
         """
@@ -72,13 +76,13 @@ class FileFinder(object):
             # get fields for work file:
             wf_fields = work_template.get_fields(work_path)
             
-            # build unique key for work path (versionless work-file path):
+            # build the unique file key for the work path.  All files that share the same key are considered
+            # to be different versions of the same file.
             #
-            key_fields = wf_fields.copy()
-            key_fields["version"] = 0            
-            file_key = work_template.apply_fields(key_fields)    
-            
+            file_key = FileItem.build_file_key(wf_fields, work_template, 
+                                               self.__version_compare_ignore_fields + ["version"])
             if filter_file_key and file_key != filter_file_key:
+                # we can ignore this file completely!
                 continue
             
             # copy common fields from work_file:
@@ -140,15 +144,20 @@ class FileFinder(object):
             
             # determine the work path fields from the publish fields + ctx fields:
             # The order is important as it ensures that the user is correct if the 
-            # publish file is in a user sandbox.
+            # publish file is in a user sandbox but we also need to be careful not
+            # to overrwrite fields that are being ignored when comparing work files
             publish_fields = publish_template.get_fields(publish_path)
-            wp_fields = dict(chain(publish_fields.iteritems(), ctx_fields.iteritems()))
+            wp_fields = publish_fields.copy()
+            for k, v in ctx_fields.iteritems():
+                if k not in self.__version_compare_ignore_fields:
+                    wp_fields[k] = v
             
-            # build unique key for publish path (versionless work-file path):
-            key_fields = wp_fields.copy()
-            key_fields["version"] = 0            
-            file_key = work_template.apply_fields(key_fields)
+            # build the unique file key for the publish path.  All files that share the same key are considered
+            # to be different versions of the same file.
+            file_key = FileItem.build_file_key(wp_fields, work_template, 
+                                               self.__version_compare_ignore_fields + ["version"])
             if filter_file_key and file_key != filter_file_key:
+                # we can ignore this file completely!
                 continue
 
             # resolve the work path:
@@ -293,17 +302,51 @@ class FileFinder(object):
         # find work files that match the current work template:
         work_fields = []
         try:
-            work_fields = context.as_template_fields(work_template)
+            work_fields = context.as_template_fields(work_template, validate=True)
         except TankError:
             # could not resolve fields from this context. This typically happens
             # when the context object does not have any corresponding objects on 
             # disk / in the path cache. In this case, we cannot continue with any
             # file system resolution, so just exit early insted.
             return []
+
+        # build list of fields to ignore when looking for files:
+        skip_fields = list(self.__version_compare_ignore_fields)
+
+        # Skip any keys from work_fields that are _only_ optional in the template.  This is to
+        # ensure we find as wide a range of files as possible considering all optional keys.
+        # Note, this may be better as a general change to the paths_from_template method...
+        skip_fields += [n for n in work_fields.keys() if work_template.is_optional(n)]
         
-        # find all versions so skip the 'version' key if it's present:
-        work_file_paths = self.__app.sgtk.paths_from_template(work_template, work_fields, ["version"], 
-                                                             skip_missing_optional_keys=True)
+        # Find all versions so skip the 'version' key if it's present:
+        skip_fields += ["version"]
+
+        # find paths:        
+        work_file_paths = self.__app.sgtk.paths_from_template(work_template, 
+                                                              work_fields, 
+                                                              skip_fields, 
+                                                              skip_missing_optional_keys=True)
+
+        # paths_from_template may have returned additional files that we don't want (aren't valid within this
+        # work area) if any of the fields were populated by the context.  Filter the list to remove these
+        # extra files.
+        filtered_paths = []
+        for p in work_file_paths:
+            # (AD) TODO - this should be optimized as it's doing 'get_fields' again 
+            # when this method returns!
+            fields = work_template.get_fields(p)
+            is_match = True
+            for wfn, wfv in work_fields.iteritems():
+                if wfn in fields:
+                    if fields[wfn] != wfv:
+                        is_match = False
+                        break
+                elif wfn not in skip_fields:
+                    is_match = False
+                    break
+            if is_match:
+                filtered_paths.append(p)
+        work_file_paths = filtered_paths
         
         # build list of work files to send to the filter_work_files hook:
         hook_work_files = [{"work_file":{"path":path}} for path in work_file_paths]

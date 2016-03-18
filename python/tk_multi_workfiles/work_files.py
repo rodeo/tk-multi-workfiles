@@ -62,6 +62,9 @@ class WorkFiles(object):
         # determine if changing work area should be available based on the sg_entity_types setting:
         self._can_change_workarea = (len(self._app.get_setting("sg_entity_types", [])) > 0)
         
+        # cache any fields that should be ignored when looking for work files:
+        self.__version_compare_ignore_fields = self._app.get_setting("version_compare_ignore_fields", [])
+        
         # set up the work area from the app:
         self._context = None
         self._configuration_is_valid = False
@@ -654,9 +657,9 @@ class WorkFiles(object):
         ctx_fields = self._context.as_template_fields(self._work_template)
         fields.update(ctx_fields)
         
-        # build unique key (this is a versionless work-file path):
-        fields["version"] = 0            
-        file_key = self._work_template.apply_fields(fields)
+        # build unique key to use when searching for existing files:
+        file_key = FileItem.build_file_key(fields, self._work_template, 
+                                           self.__version_compare_ignore_fields + ["version"])
         
         # find all files that match the file key:
         finder = FileFinder(self._app, self._user_cache)
@@ -816,6 +819,11 @@ class WorkFiles(object):
         if ctx == self._context:
             self._app.log_debug("Context hasn't changed so nothing to do!")    
             return
+        
+        # ensure our local path cache is up to date
+        self._app.log_debug("Synchronizing remote path cache...")
+        self._app.sgtk.synchronize_filesystem_structure()
+        self._app.log_debug("Path cache up to date!")
             
         # update templates for the new context:
         templates = {}
@@ -1007,7 +1015,13 @@ class WorkFiles(object):
         
         # find settings for all instances of app in 
         # the environment picked for the given context:
-        other_settings = tank.platform.find_app_settings(self._app.engine.name, self._app.name, self._app.tank, context)
+        other_settings = tank.platform.find_app_settings(
+            self._app.engine.name,
+            self._app.name,
+            self._app.tank,
+            context,
+            self._app.engine.instance_name,
+        )
         
         if len(other_settings) == 1:
             return other_settings[0].get("settings")
