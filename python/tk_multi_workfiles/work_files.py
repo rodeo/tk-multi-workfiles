@@ -821,9 +821,10 @@ class WorkFiles(object):
             return
         
         # ensure our local path cache is up to date
-        self._app.log_debug("Synchronizing remote path cache...")
-        self._app.sgtk.synchronize_filesystem_structure()
-        self._app.log_debug("Path cache up to date!")
+        self._app.log_info('Bypassing path cache synchronization. Sync on startup should be enough...')
+        # self._app.log_debug("Synchronizing remote path cache...")
+        # self._app.sgtk.synchronize_filesystem_structure()
+        # self._app.log_debug("Path cache up to date!")
             
         # update templates for the new context:
         templates = {}
