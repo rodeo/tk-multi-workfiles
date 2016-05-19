@@ -91,7 +91,7 @@ class SaveAs(object):
                     task = self._app.shotgun.find_one("Task",
                                                       [["id", "is", self._app.context.task["id"]]],
                                                       ['sg_tank_name'])
-                    default_name = task.get('sg_tank_name')
+                    default_name = task.get('sg_tank_name') or ''
 
                 if not default_name and not name_is_optional:
                     # name isn't optional so we should use something:
