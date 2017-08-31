@@ -754,6 +754,23 @@ class WorkFiles(object):
 
             do_new = widget.do_new_scene
 
+            # widget.context contains the selected context (shot or entity)
+            if os.getenv('REZ_USED_REQUEST'):
+                # we are under Rez, some entity may not be compatible with current one..
+                # delayed import on purpose, not available outside of rez:
+                new_ctx = widget.context
+                from rdo_rez_launcher.tools import start_app_if_new_entity_incompatible
+                if start_app_if_new_entity_incompatible(
+                    lambda title, message: QtGui.QMessageBox.Yes == QtGui.QMessageBox.question(
+                        None, title, message, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No),
+                    new_ctx.tank.shotgun, new_ctx.entity['name'],
+                    tank_config_name=new_ctx.tank.configuration_name
+                ):
+                    # this means the new entity isn't compatible with current one and we stop here,
+                    # user may have accepted to start new DCC instance and if it's yes then at this point
+                    # the new instance is just starting up ..
+                    return
+
             # update the current work area in the app:
             self._update_current_work_area(widget.context)
             
