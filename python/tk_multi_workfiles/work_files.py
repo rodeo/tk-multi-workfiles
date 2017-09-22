@@ -756,7 +756,7 @@ class WorkFiles(object):
 
             # widget.context contains the selected context (shot or entity)
             if os.getenv('REZ_USED_REQUEST'):
-                # we are under Rez, some entity may not be compatible with current one..
+                # we are under Rez, some entity may not be *-* Rez *-* compatible with current one..
                 # delayed import on purpose, not available outside of rez:
                 new_ctx = widget.context
                 from rdo_rez_launcher.tools import start_app_if_new_entity_incompatible
@@ -767,6 +767,8 @@ class WorkFiles(object):
                     tank_config_name=new_ctx.tank.configuration_name
                 ):
                     # this means the new entity isn't compatible with current one and we stop here,
+                    # by compatible we mean: the new entity has different Rez packages configured than
+                    # the current entity. In that case (any diff): we don't play with fire and ..
                     # user may have accepted to start new DCC instance and if it's yes then at this point
                     # the new instance is just starting up ..
                     return
