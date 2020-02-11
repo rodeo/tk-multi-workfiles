@@ -136,8 +136,9 @@ class EntityBrowserWidget(browser_widget.BrowserWidget):
                 
                 i.set_details(details)
                 i.sg_data = d
-                if d.get("image"):
-                    i.set_thumbnail(d.get("image"))
+                # RDO: Removed to prevent crash
+                # if d.get("image"):
+                #     i.set_thumbnail(d.get("image"))
                     
                 if (d and current_entity 
                     and d["id"] == current_entity.get("id") 

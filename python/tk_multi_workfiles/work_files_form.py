@@ -322,15 +322,16 @@ class WorkFilesForm(QtGui.QWidget):
             project_name = ctx.project.get("name") or sg_details.get("code")
             self._ui.project_label.setText("Project: %s" % (project_name or "-"))
             self._ui.project_frame.setToolTip("%s" % (project_name or ""))
-            
-            # thumbnail:
-            project_thumbnail = QtGui.QPixmap()
-            project_img_url = sg_details.get("image")
-            if project_img_url:
-                thumbnail_path = self._download_thumbnail(project_img_url)
-                if thumbnail_path:
-                    project_thumbnail = QtGui.QPixmap(thumbnail_path)
-            self._set_thumbnail(self._ui.project_thumbnail, project_thumbnail)
+
+            # RDO: Removed to prevent crash
+            # # thumbnail:
+            # project_thumbnail = QtGui.QPixmap()
+            # project_img_url = sg_details.get("image")
+            # if project_img_url:
+            #     thumbnail_path = self._download_thumbnail(project_img_url)
+            #     if thumbnail_path:
+            #         project_thumbnail = QtGui.QPixmap(thumbnail_path)
+            # self._set_thumbnail(self._ui.project_thumbnail, project_thumbnail)
                                 
             # description:
             desc = sg_details.get("sg_description") or "<i>No description was entered for this Project</i>"
@@ -359,15 +360,16 @@ class WorkFilesForm(QtGui.QWidget):
                 entity_name = ctx.entity.get("name") or sg_details.get("code")
                 self._ui.entity_label.setText("%s: %s" % (entity_type_name, entity_name or "-"))
                 self._ui.entity_frame.setToolTip("%s" % (entity_name or ""))
-                
-                # thumbnail:
-                entity_thumbnail = QtGui.QPixmap()
-                entity_img_url = sg_details.get("image")
-                if entity_img_url:
-                    thumbnail_path = self._download_thumbnail(entity_img_url)
-                    if thumbnail_path:
-                        entity_thumbnail = QtGui.QPixmap(thumbnail_path)
-                self._set_thumbnail(self._ui.entity_thumbnail, entity_thumbnail)
+
+                # RDO: Removed to prevent crash
+                # # thumbnail:
+                # entity_thumbnail = QtGui.QPixmap()
+                # entity_img_url = sg_details.get("image")
+                # if entity_img_url:
+                #     thumbnail_path = self._download_thumbnail(entity_img_url)
+                #     if thumbnail_path:
+                #         entity_thumbnail = QtGui.QPixmap(thumbnail_path)
+                # self._set_thumbnail(self._ui.entity_thumbnail, entity_thumbnail)
                                     
                 # description including the display of extra fields:
                 extra_info = ", ".join(["%s: %s" % (label, str(sg_details.get(field))) 
@@ -397,27 +399,28 @@ class WorkFilesForm(QtGui.QWidget):
                     task_name = ctx.task.get("name") or sg_details.get("content")
                     self._ui.task_label.setText("Task: %s" % (task_name or "-"))
                     self._ui.task_frame.setToolTip("%s" % (task_name or ""))
-                    
-                    # thumbnail:
-                    task_thumbnail = QtGui.QPixmap()
-                    task_assignees = sg_details.get("task_assignees", [])
-                    if len(task_assignees) > 0:
-                        user_id = task_assignees[0]["id"]
-                        
-                        sg_user_details = {}
-                        try:
-                            sg_user_details = self._app.shotgun.find_one("HumanUser", [["id", "is", user_id]], ["image"])
-                        except Exception, e:
-                            pass
-                        
-                        if sg_user_details:
-                            img_url = sg_user_details.get("image")
-                            if img_url:
-                                thumbnail_path = self._download_thumbnail(img_url)
-                                if thumbnail_path:
-                                    task_thumbnail = QtGui.QPixmap(thumbnail_path)
-                                
-                    self._set_thumbnail(self._ui.task_thumbnail, task_thumbnail)
+
+                    # RDO: Removed to prevent crash
+                    # # thumbnail:
+                    # task_thumbnail = QtGui.QPixmap()
+                    # task_assignees = sg_details.get("task_assignees", [])
+                    # if len(task_assignees) > 0:
+                    #     user_id = task_assignees[0]["id"]
+                    #
+                    #     sg_user_details = {}
+                    #     try:
+                    #         sg_user_details = self._app.shotgun.find_one("HumanUser", [["id", "is", user_id]], ["image"])
+                    #     except Exception, e:
+                    #         pass
+                    #
+                    #     if sg_user_details:
+                    #         img_url = sg_user_details.get("image")
+                    #         if img_url:
+                    #             thumbnail_path = self._download_thumbnail(img_url)
+                    #             if thumbnail_path:
+                    #                 task_thumbnail = QtGui.QPixmap(thumbnail_path)
+                    #
+                    # self._set_thumbnail(self._ui.task_thumbnail, task_thumbnail)
                     
                     # details
                     assignees = []
