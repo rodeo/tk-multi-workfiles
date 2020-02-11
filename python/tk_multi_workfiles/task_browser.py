@@ -200,18 +200,19 @@ class TaskBrowserWidget(browser_widget.BrowserWidget):
                         i.grab_action.triggered.connect(self.grab_task)                       
                         i.addAction(i.grab_action)
                         i.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)                
-                
-                # finally look up the thumbnail for the first user assigned to the task
-                task_assignees = d.get("task_assignees", [])
-                if len(task_assignees) > 0:
-                    user_id = task_assignees[0]["id"]
-                    # is this user id in our users dict? In that case we have their thumb!
-                    for u in result["users"]:
-                        if u["id"] == user_id:
-                            # if they have a thumb, assign!
-                            if u.get("image"):
-                                i.set_thumbnail(u.get("image"))
-                            break            
+
+                # RDO: Removed to prevent crash
+                # # finally look up the thumbnail for the first user assigned to the task
+                # task_assignees = d.get("task_assignees", [])
+                # if len(task_assignees) > 0:
+                #     user_id = task_assignees[0]["id"]
+                #     # is this user id in our users dict? In that case we have their thumb!
+                #     for u in result["users"]:
+                #         if u["id"] == user_id:
+                #             # if they have a thumb, assign!
+                #             if u.get("image"):
+                #                 i.set_thumbnail(u.get("image"))
+                #             break
                 
                 if d and current_task and d["id"] == current_task.get("id"):
                     item_to_select = i
